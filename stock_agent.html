@@ -814,7 +814,7 @@ function setOutput(n, html) {
 // --- Gemini API call (no search) ---
 async function callClaude(systemPrompt, userPrompt) {
   const key = getApiKey();
-  const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${key}`, {
+  const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
@@ -869,7 +869,7 @@ async function callClaudeChunked(systemPrompt, stockList) {
 // --- Gemini API call with Google Search grounding ---
 async function callClaudeWithSearch(systemPrompt, userPrompt) {
   const key = getApiKey();
-  const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${key}`, {
+  const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
