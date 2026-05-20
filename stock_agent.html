@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Stock Intelligence — Multi-Agent System</title>
+<title>Stock Intelligence v4</title>
 <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
   :root {
@@ -47,7 +47,21 @@
   .container { max-width: 1100px; margin: 0 auto; padding: 32px 20px; position: relative; z-index: 1; }
 
   /* Header */
-  header { text-align: center; margin-bottom: 40px; }
+  header { text-align: center; margin-bottom: 40px; position: relative; }
+  .btn-refresh {
+    position: absolute;
+    top: 0; right: 0;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 6px 12px;
+    color: var(--muted);
+    font-size: 0.72rem;
+    font-family: 'Space Mono', monospace;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .btn-refresh:hover { color: var(--accent); border-color: var(--accent); }
   header h1 {
     font-family: 'Space Mono', monospace;
     font-size: clamp(1.4rem, 4vw, 2.2rem);
@@ -61,36 +75,6 @@
   header p { color: var(--muted); font-size: 0.85rem; letter-spacing: 2px; text-transform: uppercase; }
 
   /* Input Zone */
-  /* API Key zone */
-  .apikey-zone {
-    background: var(--surface);
-    border: 1px solid rgba(167,139,250,0.4);
-    border-radius: 16px;
-    padding: 18px 24px;
-    margin-bottom: 20px;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    flex-wrap: wrap;
-  }
-  .apikey-label { font-size: 0.72rem; letter-spacing: 2px; text-transform: uppercase; color: var(--accent4); white-space: nowrap; }
-  .apikey-input {
-    flex: 1;
-    min-width: 220px;
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 8px 14px;
-    color: var(--text);
-    font-family: 'Space Mono', monospace;
-    font-size: 0.78rem;
-    outline: none;
-    transition: border 0.2s;
-  }
-  .apikey-input:focus { border-color: var(--accent4); }
-  .apikey-input::placeholder { color: var(--muted); font-size: 0.7rem; }
-  .apikey-status { font-size: 0.68rem; font-family: 'Space Mono', monospace; white-space: nowrap; }
-
   .input-zone {
     background: var(--surface);
     border: 1px solid var(--border);
@@ -227,6 +211,19 @@
   }
   .add-stock-row input:focus { border-color: var(--accent); }
   .add-stock-row input::placeholder { color: var(--muted); text-transform: none; font-size: 0.72rem; }
+  .btn-exportimport {
+    background: rgba(167,139,250,0.1);
+    border: 1px solid rgba(167,139,250,0.35);
+    color: #a78bfa;
+    border-radius: 8px;
+    padding: 6px 14px;
+    cursor: pointer;
+    font-size: 0.75rem;
+    font-family: 'Space Mono', monospace;
+    transition: all 0.2s;
+    white-space: nowrap;
+  }
+  .btn-exportimport:hover { background: rgba(167,139,250,0.2); }
   .btn-add {
     background: rgba(0,212,255,0.1);
     border: 1px solid rgba(0,212,255,0.4);
@@ -240,6 +237,35 @@
     white-space: nowrap;
   }
   .btn-add:hover { background: rgba(0,212,255,0.2); }
+
+  /* API Key zone */
+  .apikey-zone {
+    background: var(--surface);
+    border: 1px solid rgba(0,255,157,0.35);
+    border-radius: 16px;
+    padding: 16px 24px;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .apikey-label { font-size: 0.72rem; letter-spacing: 2px; text-transform: uppercase; color: var(--accent2); white-space: nowrap; }
+  .apikey-input {
+    flex: 1; min-width: 220px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 14px;
+    color: var(--text);
+    font-family: 'Space Mono', monospace;
+    font-size: 0.78rem;
+    outline: none;
+    transition: border 0.2s;
+  }
+  .apikey-input:focus { border-color: var(--accent2); }
+  .apikey-input::placeholder { color: var(--muted); font-size: 0.7rem; }
+  .apikey-status { font-size: 0.68rem; font-family: 'Space Mono', monospace; white-space: nowrap; }
 
   .save-row { display: flex; align-items: center; gap: 10px; margin-top: 6px; min-height: 18px; }
   .btn-run {
@@ -430,15 +456,16 @@
 <body>
 <div class="container">
   <header>
+    <button class="btn-refresh" onclick="hardRefresh()" title="Clear cache & reload">↺ Refresh</button>
     <h1>⬡ STOCK INTELLIGENCE</h1>
     <p>Multi-Agent Analysis System · US Markets</p>
   </header>
 
   <!-- API Key Zone -->
   <div class="apikey-zone">
-    <span class="apikey-label">🔑 Anthropic API Key</span>
-    <input type="password" class="apikey-input" id="apiKeyInput" placeholder="sk-ant-..." autocomplete="off" oninput="onApiKeyChange()" />
-    <span class="apikey-status" id="apiKeyStatus" style="color:var(--muted)">ยังไม่ได้ใส่</span>
+    <span class="apikey-label">🔑 Gemini API Key</span>
+    <input type="password" class="apikey-input" id="apiKeyInput" placeholder="AIza..." autocomplete="off" oninput="onApiKeyChange()" />
+    <span class="apikey-status" id="apiKeyStatus" style="color:var(--muted)">ยังไม่ได้ใส่ — รับฟรีที่ aistudio.google.com</span>
   </div>
 
   <!-- Input Zone -->
@@ -464,6 +491,33 @@
       <input type="text" id="customStock" placeholder="พิมพ์ ticker เช่น TSLA" maxlength="6" />
       <button class="btn-add" onclick="addCustomStock()">+ เพิ่มหุ้น</button>
       <span id="saveIndicator" style="font-size:0.68rem; font-family:'Space Mono',monospace; color:var(--accent2); opacity:0; transition:opacity 0.5s;"></span>
+    </div>
+
+    <!-- Export / Import -->
+    <div style="display:flex; gap:8px; margin-top:10px; flex-wrap:wrap;">
+      <button class="btn-exportimport" onclick="showExport()">⬇ Export</button>
+      <button class="btn-exportimport" onclick="showImport()">⬆ Import</button>
+    </div>
+
+    <!-- Export Modal -->
+    <div id="exportModal" style="display:none; margin-top:10px; background:var(--surface2); border:1px solid var(--border); border-radius:10px; padding:14px;">
+      <div style="font-size:0.7rem; color:var(--muted); font-family:'Space Mono',monospace; margin-bottom:8px;">EXPORT — copy ข้อความด้านล่างไปเก็บไว้</div>
+      <textarea id="exportText" readonly style="width:100%; height:80px; background:var(--bg); border:1px solid var(--border); border-radius:6px; color:var(--accent2); font-family:'Space Mono',monospace; font-size:0.72rem; padding:8px; resize:none;"></textarea>
+      <div style="display:flex; gap:8px; margin-top:8px;">
+        <button class="btn-add" id="copyBtn" onclick="copyExport()" style="flex:1;">Copy</button>
+        <button class="btn-clear-all" onclick="document.getElementById('exportModal').style.display='none'">ปิด</button>
+      </div>
+    </div>
+
+    <!-- Import Modal -->
+    <div id="importModal" style="display:none; margin-top:10px; background:var(--surface2); border:1px solid var(--border); border-radius:10px; padding:14px;">
+      <div style="font-size:0.7rem; color:var(--muted); font-family:'Space Mono',monospace; margin-bottom:8px;">IMPORT — วาง text ที่ copy จาก Export</div>
+      <textarea id="importText" placeholder="วาง text ที่นี่..." style="width:100%; height:80px; background:var(--bg); border:1px solid var(--border); border-radius:6px; color:var(--text); font-family:'Space Mono',monospace; font-size:0.72rem; padding:8px; resize:none;"></textarea>
+      <div style="display:flex; gap:8px; margin-top:8px;">
+        <button class="btn-add" onclick="doImport()" style="flex:1;">Import</button>
+        <button class="btn-clear-all" onclick="document.getElementById('importModal').style.display='none'">ปิด</button>
+      </div>
+      <span id="importMsg" style="font-size:0.7rem; font-family:'Space Mono',monospace; color:var(--accent2); display:none; margin-top:6px; display:block;"></span>
     </div>
 
     <button class="btn-run" id="runBtn" onclick="runAgents()">▶ เริ่มวิเคราะห์</button>
@@ -540,15 +594,15 @@ function getApiKey() { return document.getElementById('apiKeyInput').value.trim(
 function onApiKeyChange() {
   const key = getApiKey();
   const el = document.getElementById('apiKeyStatus');
-  if (!key) { el.textContent = 'ยังไม่ได้ใส่'; el.style.color = 'var(--muted)'; return; }
-  if (key.startsWith('sk-ant-')) { el.textContent = '✓ พร้อมใช้งาน'; el.style.color = 'var(--accent2)'; }
-  else { el.textContent = '⚠️ รูปแบบไม่ถูกต้อง'; el.style.color = 'var(--danger)'; }
+  if (!key) { el.textContent = 'ยังไม่ได้ใส่ — รับฟรีที่ aistudio.google.com'; el.style.color = 'var(--muted)'; return; }
+  if (key.startsWith('AIza') && key.length > 20) { el.textContent = '✓ พร้อมใช้งาน'; el.style.color = 'var(--accent2)'; }
+  else { el.textContent = '⚠️ รูปแบบไม่ถูกต้อง (ควรขึ้นต้นด้วย AIza)'; el.style.color = 'var(--danger)'; }
 }
 
 // --- State ---
 const DEFAULT_STOCKS = [];
-const STORAGE_KEY = 'stock-agent:v2:selected';
-const FALLBACK_KEY = 'stock_agent_v2';
+const STORAGE_KEY = 'stock-agent:v4:selected';
+const FALLBACK_KEY = 'stock_agent_v4';
 let selectedStocks = new Set();
 let customStocks = new Set();
 
@@ -661,6 +715,65 @@ function showStorageBadge(count) {
 document.getElementById('customStock').addEventListener('keydown', e => { if(e.key === 'Enter') addCustomStock(); });
 loadStocks();
 
+function hardRefresh() {
+  try { localStorage.removeItem(FALLBACK_KEY); } catch(e) {}
+  window.location.reload(true);
+}
+
+// --- Export / Import (copy/paste) ---
+function showExport() {
+  const data = JSON.stringify({ selected: [...selectedStocks].sort(), custom: [...customStocks].sort() });
+  document.getElementById('exportText').value = data;
+  document.getElementById('exportModal').style.display = 'block';
+  document.getElementById('importModal').style.display = 'none';
+  setTimeout(() => document.getElementById('exportText').select(), 100);
+}
+
+function copyExport() {
+  const ta = document.getElementById('exportText');
+  ta.focus();
+  ta.select();
+  ta.setSelectionRange(0, 99999); // mobile
+  let ok = false;
+  try { ok = document.execCommand('copy'); } catch(e) {}
+  if (!ok) {
+    try {
+      navigator.clipboard.writeText(ta.value);
+      ok = true;
+    } catch(e) {}
+  }
+  const btn = document.getElementById('copyBtn');
+  btn.textContent = ok ? '✓ Copied!' : '❌ ลอง copy เอง';
+  setTimeout(() => btn.textContent = 'Copy', 2000);
+}
+
+function showImport() {
+  document.getElementById('importModal').style.display = 'block';
+  document.getElementById('exportModal').style.display = 'none';
+  document.getElementById('importText').value = '';
+  document.getElementById('importMsg').textContent = '';
+}
+
+async function doImport() {
+  const raw = document.getElementById('importText').value.trim();
+  const msg = document.getElementById('importMsg');
+  try {
+    const data = JSON.parse(raw);
+    let selArr = Array.isArray(data) ? data : (data.selected || []);
+    let custArr = Array.isArray(data) ? data : (data.custom || selArr);
+    selArr.forEach(s => { selectedStocks.add(s.toUpperCase()); customStocks.add(s.toUpperCase()); });
+    custArr.forEach(s => customStocks.add(s.toUpperCase()));
+    renderGrid(); updateCount(); await saveStocks();
+    msg.style.color = 'var(--accent2)';
+    msg.textContent = `✓ Import ${selArr.length} หุ้นสำเร็จ`;
+    document.getElementById('importText').value = '';
+    setTimeout(() => document.getElementById('importModal').style.display = 'none', 1500);
+  } catch(e) {
+    msg.style.color = 'var(--danger)';
+    msg.textContent = '❌ text ไม่ถูกต้อง ลอง copy ใหม่อีกครั้ง';
+  }
+}
+
 // --- Tab UI ---
 let activeTab = 1;
 
@@ -698,51 +811,85 @@ function setOutput(n, html) {
   switchTab(n);
 }
 
-// --- Claude API call (no search) ---
+// --- Gemini API call (no search) ---
 async function callClaude(systemPrompt, userPrompt) {
-  const res = await fetch("https://api.anthropic.com/v1/messages", {
+  const key = getApiKey();
+  const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${key}`, {
     method: "POST",
-    headers: { "Content-Type": "application/json", "x-api-key": getApiKey(), "anthropic-version": "2023-06-01", "anthropic-dangerous-direct-browser-access": "true" },
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      model: "claude-sonnet-4-20250514",
-      max_tokens: 1000,
-      system: systemPrompt,
-      messages: [{ role: "user", content: userPrompt }]
+      systemInstruction: { parts: [{ text: systemPrompt }] },
+      contents: [{ role: "user", parts: [{ text: userPrompt }] }],
+      generationConfig: { maxOutputTokens: 4000 }
     })
   });
   const data = await res.json();
-  if (data.error) throw new Error(data.error.message);
-  return data.content[0].text;
+  if (data.error) throw new Error(data.error.message || JSON.stringify(data.error));
+  return data.candidates[0].content.parts[0].text;
 }
 
-// --- Claude API call with Web Search ---
+// --- Claude API call สำหรับ Agent 1 แบบ chunk (ทีละ 10 หุ้น) ---
+async function callClaudeChunked(systemPrompt, stockList) {
+  const chunkSize = 10;
+  const chunks = [];
+  for (let i = 0; i < stockList.length; i += chunkSize) {
+    chunks.push(stockList.slice(i, i + chunkSize));
+  }
+  const results = { stocks: [], portfolio: null };
+  for (let i = 0; i < chunks.length; i++) {
+    const chunk = chunks[i];
+    setStatus(1, `กำลังวิเคราะห์ ${i*chunkSize+1}-${Math.min((i+1)*chunkSize, stockList.length)} / ${stockList.length} หุ้น...`);
+    const raw = await callClaude(systemPrompt,
+      `วิเคราะห์หุ้น: ${chunk.join(', ')}
+ตอบเป็น JSON เท่านั้น:
+{"stocks":[{"ticker":"","sector":"","industry":"","market_cap":"","indices":[],"business":"","moat":"","moat_desc":""}]}`
+    );
+    try {
+      const match = raw.match(/\{[\s\S]*\}/);
+      const parsed = JSON.parse(match ? match[0] : raw);
+      if (parsed.stocks) results.stocks.push(...parsed.stocks);
+    } catch(e) {}
+  }
+  // portfolio overview แยก call
+  if (stockList.length > 0) {
+    setStatus(1, 'วิเคราะห์ Portfolio Overview...');
+    const pRaw = await callClaude(systemPrompt,
+      `วิเคราะห์ portfolio overview ของหุ้น: ${stockList.join(', ')}
+ตอบเป็น JSON เท่านั้น:
+{"strategy":"","concentration_risk":"","correlation_risk":"","macro_risk":""}`
+    );
+    try {
+      const match = pRaw.match(/\{[\s\S]*\}/);
+      results.portfolio = JSON.parse(match ? match[0] : pRaw);
+    } catch(e) {}
+  }
+  return results;
+}
+
+// --- Gemini API call with Google Search grounding ---
 async function callClaudeWithSearch(systemPrompt, userPrompt) {
-  const res = await fetch("https://api.anthropic.com/v1/messages", {
+  const key = getApiKey();
+  const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${key}`, {
     method: "POST",
-    headers: { "Content-Type": "application/json", "x-api-key": getApiKey(), "anthropic-version": "2023-06-01", "anthropic-dangerous-direct-browser-access": "true" },
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      model: "claude-sonnet-4-20250514",
-      max_tokens: 2000,
-      system: systemPrompt,
-      tools: [{ type: "web_search_20250305", name: "web_search" }],
-      messages: [{ role: "user", content: userPrompt }]
+      systemInstruction: { parts: [{ text: systemPrompt }] },
+      contents: [{ role: "user", parts: [{ text: userPrompt }] }],
+      tools: [{ google_search: {} }],
+      generationConfig: { maxOutputTokens: 2000 }
     })
   });
   const data = await res.json();
-  if (data.error) throw new Error(data.error.message);
-  // รวม text ทั้งหมดจาก content blocks
-  const text = (data.content || [])
-    .filter(b => b.type === 'text')
-    .map(b => b.text)
-    .join('\n');
-  return text || '(ไม่พบข้อมูล)';
+  if (data.error) throw new Error(data.error.message || JSON.stringify(data.error));
+  const parts = (data.candidates[0].content.parts || []);
+  return parts.filter(p => p.text).map(p => p.text).join('\n') || '(ไม่พบข้อมูล)';
 }
 
 // --- Main ---
 async function runAgents() {
   const stocks = [...selectedStocks];
   if (stocks.length === 0) { alert('กรุณาเลือกหุ้นอย่างน้อย 1 ตัว'); return; }
-  if (!getApiKey() || !getApiKey().startsWith('sk-ant-')) { alert('กรุณาใส่ Anthropic API Key ที่ถูกต้องก่อน (เริ่มต้นด้วย sk-ant-)'); return; }
+  if (!getApiKey()) { alert('กรุณาใส่ Gemini API Key ก่อน\nรับฟรีได้ที่ aistudio.google.com'); return; }
 
   const btn = document.getElementById('runBtn');
   btn.disabled = true;
@@ -763,142 +910,352 @@ async function runAgents() {
     // ── AGENT 1 ──
     setActive(1); setStatus(1, 'กำลังทำงาน...');
     setOutput(1, '<div class="loading"><div class="spinner"></div> กำลังประมวลผล...</div>');
-    const a1 = await callClaude(
-      `คุณคือ Senior Portfolio Manager จาก Goldman Sachs ที่มีประสบการณ์ 20 ปีด้าน US Equity
-ตอบภาษาไทย กระชับ มืออาชีพ ใช้ข้อมูล fundamental ที่รู้จักจาก training data
-ห้ามแต่งข้อมูลที่ไม่รู้จริง`,
-      `วิเคราะห์ portfolio composition ของหุ้น: ${stocks.join(', ')}
 
-สำหรับแต่ละหุ้นระบุ:
-1. Sector / Industry / Sub-industry (GICS classification)
-2. Market Cap tier (Mega/Large/Mid cap) และ Index membership (S&P500, Nasdaq100, DJIA)
-3. Business model หลัก และ revenue streams สำคัญ
-4. Competitive moat (Network effect / Cost advantage / Switching cost / Intangible asset)
+    const a1system = `คุณคือ Senior Portfolio Manager จาก Goldman Sachs ที่มีประสบการณ์ 20 ปีด้าน US Equity
+ตอบเป็น JSON เท่านั้น ห้ามมี markdown backtick หรือข้อความนอก JSON`;
 
-จากนั้นวิเคราะห์ Portfolio ภาพรวม:
-5. Sector concentration risk — หุ้นกลุ่มไหนหนักเกินไป?
-6. Correlation risk — หุ้นไหนมักเคลื่อนไหวไปทิศทางเดียวกัน?
-7. กลยุทธ์ที่เหมาะ: Growth / GARP / Value / Momentum
-8. ความเสี่ยงหลักของ portfolio นี้ใน macro environment ปัจจุบัน (Fed policy, USD strength, recession risk)`
-    );
+    let a1json;
+    if (stocks.length <= 10) {
+      const a1raw = await callClaude(a1system,
+        `วิเคราะห์ portfolio composition ของหุ้น: ${stocks.join(', ')}
+ตอบเป็น JSON format นี้เท่านั้น:
+{"stocks":[{"ticker":"AAPL","sector":"","industry":"","market_cap":"","indices":[],"business":"","moat":"","moat_desc":""}],"portfolio":{"strategy":"","concentration_risk":"","correlation_risk":"","macro_risk":""}}`
+      );
+      try {
+        const match = a1raw.match(/\{[\s\S]*\}/);
+        a1json = JSON.parse(match ? match[0] : a1raw.replace(/```json|```/g,'').trim());
+      } catch(e) { a1json = null; }
+    } else {
+      a1json = await callClaudeChunked(a1system, stocks);
+    }
+
+    function renderAgent1(data) {
+      if (!data || !data.stocks) return `<div style="white-space:pre-wrap;font-size:0.85rem;line-height:1.8">${a1raw}</div>`;
+      const moatColor = { 'Network Effect':'#00d4ff','Cost Advantage':'#00ff9d','Switching Cost':'#a78bfa','Intangible Asset':'#ffd700' };
+      let html = `<div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px;">${stocks.map(s=>`<span class="stock-badge">${s}</span>`).join('')}</div>`;
+      data.stocks.forEach(s => {
+        const mc = moatColor[s.moat] || '#00d4ff';
+        html += `<div style="margin-bottom:14px;border:1px solid #1a2d47;border-radius:12px;overflow:hidden;">
+          <div style="background:#111d2e;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
+            <div style="display:flex;align-items:center;gap:10px;">
+              <span style="font-family:'Space Mono',monospace;font-size:1rem;font-weight:700;color:#e2eaf5;">${s.ticker}</span>
+              <span style="font-size:0.68rem;color:#4a6080;">${s.sector} · ${s.industry}</span>
+            </div>
+            <div style="display:flex;gap:6px;flex-wrap:wrap;">
+              <span style="font-size:0.65rem;padding:2px 8px;border-radius:4px;background:rgba(0,212,255,0.1);border:1px solid rgba(0,212,255,0.3);color:#00d4ff;font-family:'Space Mono',monospace;">${s.market_cap}</span>
+              ${(s.indices||[]).map(i=>`<span style="font-size:0.65rem;padding:2px 8px;border-radius:4px;background:rgba(167,139,250,0.1);border:1px solid rgba(167,139,250,0.3);color:#a78bfa;font-family:'Space Mono',monospace;">${i}</span>`).join('')}
+            </div>
+          </div>
+          <div style="padding:12px 16px;display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+            <div>
+              <div style="font-size:0.65rem;letter-spacing:2px;color:#4a6080;text-transform:uppercase;margin-bottom:4px;">Business</div>
+              <div style="font-size:0.78rem;color:#e2eaf5;line-height:1.5;">${s.business}</div>
+            </div>
+            <div>
+              <div style="font-size:0.65rem;letter-spacing:2px;color:#4a6080;text-transform:uppercase;margin-bottom:4px;">Moat</div>
+              <div style="font-size:0.75rem;padding:3px 10px;border-radius:20px;border:1px solid ${mc};color:${mc};display:inline-block;margin-bottom:4px;">${s.moat}</div>
+              <div style="font-size:0.73rem;color:#94a3b8;">${s.moat_desc||''}</div>
+            </div>
+          </div>
+        </div>`;
+      });
+      if (data.portfolio) {
+        const p = data.portfolio;
+        html += `<div style="background:#111d2e;border:1px solid #1a2d47;border-radius:12px;padding:16px;">
+          <div style="font-size:0.65rem;letter-spacing:2px;color:#00ff9d;text-transform:uppercase;margin-bottom:12px;">📊 Portfolio Overview</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+            <div style="background:#0d1520;border-radius:8px;padding:10px;">
+              <div style="font-size:0.62rem;color:#4a6080;margin-bottom:4px;">STRATEGY</div>
+              <div style="font-size:0.8rem;color:#00d4ff;font-family:'Space Mono',monospace;">${p.strategy}</div>
+            </div>
+            <div style="background:#0d1520;border-radius:8px;padding:10px;">
+              <div style="font-size:0.62rem;color:#4a6080;margin-bottom:4px;">CONCENTRATION</div>
+              <div style="font-size:0.75rem;color:#e2eaf5;">${p.concentration_risk}</div>
+            </div>
+            <div style="background:#0d1520;border-radius:8px;padding:10px;">
+              <div style="font-size:0.62rem;color:#4a6080;margin-bottom:4px;">CORRELATION</div>
+              <div style="font-size:0.75rem;color:#e2eaf5;">${p.correlation_risk}</div>
+            </div>
+            <div style="background:#0d1520;border-radius:8px;padding:10px;">
+              <div style="font-size:0.62rem;color:#4a6080;margin-bottom:4px;">MACRO RISK</div>
+              <div style="font-size:0.75rem;color:#ffd700;">${p.macro_risk}</div>
+            </div>
+          </div>
+        </div>`;
+      }
+      return html;
+    }
+
     setStatus(1, '✓ เสร็จแล้ว');
-    setOutput(1, `<div class="stock-list">${stocks.map(s=>`<span class="stock-badge">${s}</span>`).join('')}</div><br>${a1}`);
+    setOutput(1, renderAgent1(a1json));
+    const a1 = JSON.stringify(a1json || {});
 
-    // ── AGENT 2 (Web Search) ──
+    // ── AGENT 2 (Web Search - chunked by 5) ──
     setActive(2); setStatus(2, 'กำลังค้นหาข้อมูล real-time...');
-    setOutput(2, '<div class="loading"><div class="spinner"></div> กำลังค้นหาข้อมูล real-time...</div>');
-    const a2 = await callClaudeWithSearch(
-      `คุณคือ Senior Equity Research Analyst ที่เชี่ยวชาญด้าน US stocks
+    setOutput(2, '<div class="loading"><div class="spinner"></div> กำลังค้นหาข้อมูล...</div>');
+    const now = new Date();
+    const currentDate = now.toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' });
+    const currentYear = now.getFullYear();
+    const currentMonth = now.toLocaleString('en-US', { month: 'long', year: 'numeric' });
+    const a2system = `คุณคือ Senior Equity Research Analyst ที่เชี่ยวชาญด้าน US stocks
 ค้นหาข้อมูลล่าสุดจากอินเทอร์เน็ตทุกครั้ง ห้ามใช้ความรู้เก่าจาก training data โดยไม่ค้นยืนยันก่อน
-ตอบภาษาไทย ละเอียด มีตัวเลขอ้างอิง ระบุแหล่งที่มาทุกครั้ง`,
-      `ค้นหาข้อมูลล่าสุดสำหรับหุ้นแต่ละตัว: ${stocks.join(', ')}
+ตอบภาษาไทย ละเอียด มีตัวเลขอ้างอิง ระบุแหล่งที่มาและวันที่ทุกครั้ง วันที่ปัจจุบัน: ${currentDate}`;
+    const a2prompt = (chunk) => `ค้นหาข้อมูลล่าสุดของหุ้น: ${chunk.join(', ')}
+⚠️ เน้นข้อมูลปี ${currentYear} เดือน ${currentMonth} เท่านั้น
+สำหรับแต่ละหุ้น: EPS actual vs estimate, Earning Call highlights, ข่าวสำคัญ (พร้อมวันที่), Analyst price target, Insider activity`;
 
-ค้นหา keyword เหล่านี้สำหรับแต่ละ ticker:
-- "[TICKER] earnings call transcript Q1 Q2 2025"
-- "[TICKER] EPS beat miss revenue guidance 2025"
-- "[TICKER] analyst upgrade downgrade price target 2025"
-- "[TICKER] insider buying selling SEC 8-K 13F filing"
-- "[TICKER] share buyback dividend announcement"
-- "[TICKER] news investor day product launch partnership"
-
-สรุปต่อหุ้น:
-1. 📊 Earnings ล่าสุด: EPS actual vs estimate, Revenue actual vs estimate, YoY growth %
-2. 🎙️ Earning Call: CEO/CFO guidance, คำพูดสำคัญ, outlook ปีหน้า
-3. 📰 ข่าวสำคัญ 1-3 เดือนล่าสุด (เรียงจากใหม่ไปเก่า)
-4. 🎯 Analyst consensus: average price target, จำนวน Buy/Hold/Sell rating
-5. 🏛️ Insider activity: มีการซื้อ/ขายหุ้นของผู้บริหารไหม?
-ระบุวันที่และแหล่งที่มาของข้อมูลทุกรายการ`
-    );
+    const a2chunks = [];
+    for (let i = 0; i < stocks.length; i += 5) a2chunks.push(stocks.slice(i, i+5));
+    const a2parts = [];
+    for (let i = 0; i < a2chunks.length; i++) {
+      setStatus(2, `กำลังค้นหา ${i*5+1}-${Math.min((i+1)*5, stocks.length)} / ${stocks.length} หุ้น...`);
+      const part = await callClaudeWithSearch(a2system, a2prompt(a2chunks[i]));
+      a2parts.push(part);
+      // update output แบบ live ทีละ chunk
+      setOutput(2, renderAgent2(a2parts.join('\n\n---\n\n')));
+    }
+    const a2 = a2parts.join('\n\n');
     setStatus(2, '✓ เสร็จแล้ว');
-    setOutput(2, a2);
+    setOutput(2, renderAgent2(a2));
 
-    // ── AGENT 3 ──
+    // render Agent 2 as styled text with section headers
+    function renderAgent2(text) {
+      const lines = text.split('\n');
+      let html = '';
+      let inStock = false;
+      lines.forEach(line => {
+        const trimmed = line.trim();
+        if (!trimmed) return;
+        if (trimmed === '---') { if (inStock) { html += `</div></div>`; inStock = false; } return; }
+        if (/^#{1,3}\s*[A-Z]{1,6}/.test(trimmed) || stocks.some(s => trimmed.startsWith(s) && trimmed.length < 20)) {
+          if (inStock) html += `</div></div>`;
+          html += `<div style="margin-bottom:14px;border:1px solid #1a2d47;border-radius:12px;overflow:hidden;">
+            <div style="background:#111d2e;padding:12px 16px;font-family:'Space Mono',monospace;font-size:0.9rem;font-weight:700;color:#a78bfa;">${trimmed.replace(/^#+\s*/,'')}</div>
+            <div style="padding:12px 16px;">`;
+          inStock = true;
+        } else if (trimmed.startsWith('•') || trimmed.startsWith('-') || trimmed.startsWith('*')) {
+          html += `<div style="font-size:0.78rem;color:#e2eaf5;padding:3px 0 3px 8px;border-left:2px solid #1a2d47;margin-bottom:4px;">${trimmed.replace(/^[•\-\*]\s*/,'')}</div>`;
+        } else if (/^\d+\./.test(trimmed)) {
+          html += `<div style="font-size:0.78rem;color:#94a3b8;margin-bottom:6px;padding:6px 10px;background:#0d1520;border-radius:6px;">${trimmed}</div>`;
+        } else {
+          html += `<div style="font-size:0.78rem;color:#94a3b8;line-height:1.6;margin-bottom:4px;">${trimmed}</div>`;
+        }
+      });
+      if (inStock) html += `</div></div>`;
+      return html || `<div style="white-space:pre-wrap;font-size:0.82rem;line-height:1.8;color:#e2eaf5;">${text}</div>`;
+    }
+
+    // ── AGENT 3 (chunked by 10) ──
     setActive(3); setStatus(3, 'กำลังวิเคราะห์เชิงลึก...');
     setOutput(3, '<div class="loading"><div class="spinner"></div> กำลังวิเคราะห์...</div>');
-    const a3 = await callClaude(
-      `คุณคือ Quantitative Analyst และ Risk Manager ระดับ CFA ที่เชี่ยวชาญด้าน US equity
-วิเคราะห์เชิงลึกโดยอิงข้อมูลที่ได้รับ ตอบภาษาไทย มีตัวเลขและเหตุผลชัดเจน`,
-      `วิเคราะห์หุ้น ${stocks.join(', ')} จากข้อมูลต่อไปนี้:
+    const a3system = `คุณคือ Quantitative Analyst และ Risk Manager ระดับ CFA ที่เชี่ยวชาญด้าน US equity
+ตอบเป็น JSON เท่านั้น ห้ามมี markdown หรือ backtick ห้ามมีข้อความนอก JSON`;
+    const a3prompt = (chunk, news) => `วิเคราะห์หุ้น ${chunk.join(', ')}
+=== News & Context ===
+${news}
+ตอบ JSON: {"stocks":[{"ticker":"","sentiment":"Bullish","confidence":75,"risk_score":5,"risk_type":"","short_term":"Bullish","long_term":"Bullish","news":[{"headline":"","sentiment":"positive","impact":"high","summary":""}],"positive_catalysts":[],"negative_catalysts":[],"downside_scenario":""}],"portfolio_note":""}`;
 
-=== ข้อมูล Portfolio Context (Agent 1) ===
-${a1}
+    const a3chunks = [];
+    for (let i = 0; i < stocks.length; i += 10) a3chunks.push(stocks.slice(i, i+10));
+    const a3stocks = [];
+    let a3portfolioNote = '';
+    for (let i = 0; i < a3chunks.length; i++) {
+      setStatus(3, `กำลังวิเคราะห์ ${i*10+1}-${Math.min((i+1)*10, stocks.length)} / ${stocks.length} หุ้น...`);
+      // ดึงเฉพาะข่าวของ chunk นี้จาก a2
+      const chunkNews = a2chunks[i] ? a2parts[i] || '' : '';
+      const raw = await callClaude(a3system, a3prompt(a3chunks[i], chunkNews));
+      try {
+        const match = raw.match(/\{[\s\S]*\}/);
+        const parsed = JSON.parse(match ? match[0] : raw);
+        if (parsed.stocks) a3stocks.push(...parsed.stocks);
+        if (parsed.portfolio_note && !a3portfolioNote) a3portfolioNote = parsed.portfolio_note;
+      } catch(e) {}
+    }
+    const a3json = { stocks: a3stocks, portfolio_note: a3portfolioNote };
 
-=== ข้อมูล Research & ข่าวล่าสุด (Agent 2) ===
-${a2}
+    const sentimentColor = { 'Bullish': '#00ff9d', 'Bearish': '#ff4757', 'Neutral': '#ffd700' };
+    const impactLabel = { 'high': 'สูง', 'medium': 'กลาง', 'low': 'ต่ำ' };
 
-กรุณาวิเคราะห์:
+    function renderAgent3(data) {
+      if (!data || !data.stocks) return `<div class="idle">❌ วิเคราะห์ไม่ได้</div>`;
+      let html = '';
+      data.stocks.forEach(s => {
+        const sc = sentimentColor[s.sentiment] || '#ffd700';
+        const riskColor = s.risk_score <= 3 ? '#00ff9d' : s.risk_score <= 6 ? '#ffd700' : '#ff4757';
+        html += `
+        <div style="margin-bottom:20px; border:1px solid #1a2d47; border-radius:12px; overflow:hidden;">
+          <!-- Stock Header -->
+          <div style="background:#111d2e; padding:14px 16px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px;">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span style="font-family:'Space Mono',monospace; font-size:1rem; font-weight:700; color:#e2eaf5;">${s.ticker}</span>
+              <span style="font-size:0.7rem; padding:3px 10px; border-radius:20px; border:1px solid ${sc}; color:${sc}; font-family:'Space Mono',monospace;">${s.sentiment} ${s.confidence}%</span>
+            </div>
+            <div style="display:flex; gap:8px; align-items:center;">
+              <span style="font-size:0.68rem; color:#4a6080; font-family:'Space Mono',monospace;">RISK</span>
+              <span style="font-family:'Space Mono',monospace; font-size:0.85rem; font-weight:700; color:${riskColor};">${s.risk_score}/10</span>
+              <span style="font-size:0.68rem; color:#4a6080;">${s.risk_type}</span>
+            </div>
+          </div>
 
-1. 📈 Sentiment Analysis ต่อหุ้น:
-   - Sentiment: Bullish / Bearish / Neutral พร้อม confidence level (%)
-   - เหตุผลหลัก 2-3 ข้อ
-   - Short-term (1-3 เดือน) vs Long-term (6-12 เดือน) outlook ต่างกันไหม?
+          <!-- Outlook -->
+          <div style="padding:10px 16px; display:flex; gap:16px; border-bottom:1px solid #1a2d47; flex-wrap:wrap;">
+            <div style="font-size:0.72rem; color:#4a6080;">Short-term: <span style="color:${sentimentColor[s.short_term]||'#ffd700'}">${s.short_term}</span></div>
+            <div style="font-size:0.72rem; color:#4a6080;">Long-term: <span style="color:${sentimentColor[s.long_term]||'#ffd700'}">${s.long_term}</span></div>
+          </div>
 
-2. ⚠️ Risk Assessment ต่อหุ้น:
-   - Risk Score 1-10 (10 = เสี่ยงสูงสุด)
-   - ประเภทความเสี่ยง: Business / Financial / Valuation / Macro / Regulatory
-   - Downside scenario ที่แย่ที่สุดคืออะไร?
+          <!-- News -->
+          <div style="padding:12px 16px; border-bottom:1px solid #1a2d47;">
+            <div style="font-size:0.65rem; letter-spacing:2px; color:#4a6080; text-transform:uppercase; margin-bottom:8px;">ข่าวล่าสุด</div>
+            ${(s.news||[]).map(n => {
+              const isPos = n.sentiment === 'positive';
+              const nc = isPos ? '#00ff9d' : '#ff4757';
+              const nb = isPos ? 'rgba(0,255,157,0.06)' : 'rgba(255,71,87,0.06)';
+              const icon = isPos ? '🟢' : '🔴';
+              return `<div style="background:${nb}; border:1px solid ${nc}22; border-left:3px solid ${nc}; border-radius:6px; padding:8px 12px; margin-bottom:6px;">
+                <div style="display:flex; align-items:flex-start; gap:6px; margin-bottom:3px;">
+                  <span style="font-size:0.75rem;">${icon}</span>
+                  <span style="font-size:0.78rem; font-weight:600; color:#e2eaf5; line-height:1.4;">${n.headline}</span>
+                  <span style="margin-left:auto; font-size:0.62rem; padding:1px 6px; border-radius:3px; background:${nc}22; color:${nc}; white-space:nowrap; font-family:'Space Mono',monospace;">Impact ${impactLabel[n.impact]||n.impact}</span>
+                </div>
+                <div style="font-size:0.73rem; color:#94a3b8; padding-left:18px;">${n.summary}</div>
+              </div>`;
+            }).join('')}
+          </div>
 
-3. 🔑 Key Catalysts ต่อหุ้น:
-   - Positive catalysts ที่รอ (earnings, product launch, FDA approval ฯลฯ)
-   - Negative catalysts ที่ต้องระวัง
+          <!-- Catalysts -->
+          <div style="padding:12px 16px; display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+            <div>
+              <div style="font-size:0.65rem; letter-spacing:2px; color:#00ff9d; text-transform:uppercase; margin-bottom:6px;">✅ Upside</div>
+              ${(s.positive_catalysts||[]).map(c=>`<div style="font-size:0.73rem; color:#e2eaf5; margin-bottom:4px; padding-left:8px; border-left:2px solid #00ff9d33;">• ${c}</div>`).join('')}
+            </div>
+            <div>
+              <div style="font-size:0.65rem; letter-spacing:2px; color:#ff4757; text-transform:uppercase; margin-bottom:6px;">⚠️ Downside</div>
+              ${(s.negative_catalysts||[]).map(c=>`<div style="font-size:0.73rem; color:#e2eaf5; margin-bottom:4px; padding-left:8px; border-left:2px solid #ff475733;">• ${c}</div>`).join('')}
+            </div>
+          </div>
+          ${s.downside_scenario ? `<div style="padding:0 16px 12px; font-size:0.72rem; color:#ff475788; font-style:italic;">🔻 Worst case: ${s.downside_scenario}</div>` : ''}
+        </div>`;
+      });
+      if (data.portfolio_note) {
+        html += `<div style="background:#111d2e; border:1px solid #1a2d47; border-radius:10px; padding:14px 16px; font-size:0.8rem; color:#94a3b8; line-height:1.7;">
+          <div style="font-size:0.65rem; letter-spacing:2px; color:#a78bfa; text-transform:uppercase; margin-bottom:8px;">🔗 Portfolio Overview</div>
+          ${data.portfolio_note}
+        </div>`;
+      }
+      return html;
+    }
 
-4. 🔗 Portfolio Correlation Analysis:
-   - หุ้นไหน high correlation กัน? (ถ้า 1 ตัวร่วง อาจลากตัวอื่น)
-   - Beta ประมาณเท่าไหร่เทียบกับ S&P500?
-   - Portfolio มี diversification ที่ดีพอไหม?
-
-5. 📉 Valuation Red Flags:
-   - หุ้นตัวไหนดูแพงหรือถูกผิดปกติเทียบกับ sector peer?`
-    );
     setStatus(3, '✓ เสร็จแล้ว');
-    setOutput(3, a3);
+    setOutput(3, renderAgent3(a3json));
 
     // ── AGENT 4 ──
     setActive(4); setStatus(4, 'กำลังเขียนรายงานสรุป...');
     setOutput(4, '<div class="loading"><div class="spinner"></div> กำลังเขียนรายงาน...</div>');
-    const a4 = await callClaude(
-      `คุณคือ Chief Investment Strategist ที่เขียนรายงานให้นักลงทุนระดับ institutional
-เขียนรายงานภาษาไทยที่อ่านง่าย กระชับ มีโครงสร้างชัดเจน ใช้ตัวเลขอ้างอิงจากข้อมูลที่มี
-ห้ามแต่งข้อมูลที่ไม่มีในข้อมูลที่ได้รับ`,
-      `เขียนรายงานการวิเคราะห์หุ้น ${stocks.join(', ')} จากข้อมูลทั้งหมด:
+    // สรุป A3 แบบย่อสำหรับส่งให้ Agent 4 (ลด token)
+    const a3summary = (a3json?.stocks || []).map(s =>
+      `${s.ticker}: ${s.sentiment}(${s.confidence}%) Risk:${s.risk_score}/10 | +${(s.positive_catalysts||[]).join(',')} | -${(s.negative_catalysts||[]).join(',')}`
+    ).join('\n');
 
-=== Portfolio Context ===
+    const a4raw = await callClaude(
+      `คุณคือ Chief Investment Strategist ที่เขียนรายงานให้นักลงทุนระดับ institutional
+ตอบเป็น JSON เท่านั้น ห้ามมี markdown backtick หรือข้อความนอก JSON`,
+      `สร้างรายงานการวิเคราะห์หุ้น ${stocks.join(', ')} จากข้อมูลสรุป:
+
+=== Portfolio Strategy ===
 ${a1}
 
-=== Research & News (Real-time) ===
-${a2}
+=== Sentiment & Risk Summary (per stock) ===
+${a3summary}
 
-=== Deep Analysis ===
-${a3}
+=== Portfolio Note ===
+${a3json?.portfolio_note || ''}
 
-โครงสร้างรายงาน:
-
-## 📋 Executive Summary
-(3-4 ประโยค ครอบคลุม key takeaway ของทั้ง portfolio)
-
-## 🎯 Investment Recommendation ต่อหุ้น
-สำหรับแต่ละหุ้น:
-- สัญญาณ: ✅ BUY / ⏸️ HOLD / ❌ SELL
-- เหตุผลหลัก (2-3 ข้อ)
-- Price target zone (ถ้ามีข้อมูล) และ Time horizon
-
-## 🛡️ Portfolio Risk Summary
-- Overall risk level: Low / Medium / High
-- จุดอ่อนหลักของ portfolio นี้
-- วิธี hedge หรือ rebalance ที่แนะนำ
-
-## ⚡ Action Items
-- สิ่งที่ต้องติดตามใน 30 วันข้างหน้า (earnings dates, events สำคัญ)
-- Trigger ที่จะเปลี่ยน recommendation
-
----
-⚠️ Disclaimer: รายงานนี้จัดทำเพื่อการศึกษาเท่านั้น ไม่ใช่คำแนะนำการลงทุน การลงทุนมีความเสี่ยง ผู้ลงทุนควรศึกษาข้อมูลเพิ่มเติมก่อนตัดสินใจ`
+ตอบเป็น JSON format นี้เท่านั้น:
+{"executive_summary":"สรุป 3-4 ประโยค","overall_risk":"Medium","recommendations":[{"ticker":"AAPL","signal":"BUY","reasons":["เหตุผล 1","เหตุผล 2"],"price_target":"$220-240","horizon":"6-12 เดือน"}],"portfolio_risk":{"level":"Medium","weakness":"จุดอ่อนหลัก","hedge":"วิธี hedge/rebalance"},"action_items":["ติดตาม 1","ติดตาม 2"],"triggers":["trigger 1"]}`
     );
+
+    let a4json;
+    try {
+      const match = a4raw.match(/\{[\s\S]*\}/);
+      const cleaned = match ? match[0] : a4raw.replace(/```json|```/g,'').trim();
+      a4json = JSON.parse(cleaned);
+    } catch(e) { a4json = null; }
+
+    function renderAgent4(data) {
+      if (!data) return `<div style="white-space:pre-wrap;font-size:0.85rem;line-height:1.8;">${a4raw}</div>`;
+      const sigColor = { 'BUY':'#00ff9d', 'HOLD':'#ffd700', 'SELL':'#ff4757' };
+      const sigIcon = { 'BUY':'✅', 'HOLD':'⏸️', 'SELL':'❌' };
+      const riskColor = { 'Low':'#00ff9d', 'Medium':'#ffd700', 'High':'#ff4757' };
+      const rc = riskColor[data.overall_risk] || '#ffd700';
+
+      let html = `
+      <!-- Executive Summary -->
+      <div style="background:linear-gradient(135deg,rgba(0,212,255,0.08),rgba(0,255,157,0.05));border:1px solid rgba(0,212,255,0.2);border-radius:12px;padding:16px;margin-bottom:16px;">
+        <div style="font-size:0.65rem;letter-spacing:2px;color:#00d4ff;text-transform:uppercase;margin-bottom:8px;">📋 Executive Summary</div>
+        <div style="font-size:0.85rem;color:#e2eaf5;line-height:1.8;">${data.executive_summary}</div>
+        <div style="margin-top:10px;display:inline-flex;align-items:center;gap:6px;background:${rc}18;border:1px solid ${rc}44;border-radius:20px;padding:4px 14px;">
+          <span style="font-size:0.65rem;color:#4a6080;">Overall Risk</span>
+          <span style="font-family:'Space Mono',monospace;font-size:0.8rem;font-weight:700;color:${rc};">${data.overall_risk}</span>
+        </div>
+      </div>
+
+      <!-- Recommendations -->
+      <div style="font-size:0.65rem;letter-spacing:2px;color:#00ff9d;text-transform:uppercase;margin-bottom:10px;">🎯 Investment Recommendations</div>
+      <div style="display:grid;gap:10px;margin-bottom:16px;">
+        ${(data.recommendations||[]).map(r => {
+          const sc = sigColor[r.signal] || '#ffd700';
+          const si = sigIcon[r.signal] || '⏸️';
+          return `<div style="border:1px solid #1a2d47;border-radius:12px;overflow:hidden;">
+            <div style="background:#111d2e;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
+              <span style="font-family:'Space Mono',monospace;font-size:0.95rem;font-weight:700;color:#e2eaf5;">${r.ticker}</span>
+              <div style="display:flex;align-items:center;gap:8px;">
+                ${r.price_target ? `<span style="font-size:0.7rem;color:#4a6080;">${r.price_target}</span>` : ''}
+                <span style="font-size:0.75rem;padding:4px 14px;border-radius:20px;border:2px solid ${sc};color:${sc};font-family:'Space Mono',monospace;font-weight:700;">${si} ${r.signal}</span>
+              </div>
+            </div>
+            <div style="padding:12px 16px;">
+              ${(r.reasons||[]).map(reason=>`<div style="font-size:0.78rem;color:#e2eaf5;padding:4px 0 4px 10px;border-left:2px solid ${sc}55;margin-bottom:4px;">• ${reason}</div>`).join('')}
+              ${r.horizon ? `<div style="margin-top:8px;font-size:0.68rem;color:#4a6080;font-family:'Space Mono',monospace;">⏱ ${r.horizon}</div>` : ''}
+            </div>
+          </div>`;
+        }).join('')}
+      </div>
+
+      <!-- Portfolio Risk -->
+      <div style="background:#111d2e;border:1px solid #1a2d47;border-radius:12px;padding:16px;margin-bottom:16px;">
+        <div style="font-size:0.65rem;letter-spacing:2px;color:#ff6b35;text-transform:uppercase;margin-bottom:12px;">🛡️ Portfolio Risk Summary</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+          <div style="background:#0d1520;border-radius:8px;padding:10px;">
+            <div style="font-size:0.62rem;color:#4a6080;margin-bottom:4px;">WEAKNESS</div>
+            <div style="font-size:0.75rem;color:#ffd700;">${data.portfolio_risk?.weakness||''}</div>
+          </div>
+          <div style="background:#0d1520;border-radius:8px;padding:10px;">
+            <div style="font-size:0.62rem;color:#4a6080;margin-bottom:4px;">HEDGE / REBALANCE</div>
+            <div style="font-size:0.75rem;color:#00ff9d;">${data.portfolio_risk?.hedge||''}</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Action Items -->
+      <div style="background:#111d2e;border:1px solid #1a2d47;border-radius:12px;padding:16px;margin-bottom:16px;">
+        <div style="font-size:0.65rem;letter-spacing:2px;color:#a78bfa;text-transform:uppercase;margin-bottom:10px;">⚡ Action Items (30 วัน)</div>
+        ${(data.action_items||[]).map(a=>`<div style="font-size:0.78rem;color:#e2eaf5;padding:5px 0 5px 10px;border-left:2px solid #a78bfa55;margin-bottom:5px;">• ${a}</div>`).join('')}
+        ${(data.triggers||[]).length ? `
+        <div style="font-size:0.65rem;letter-spacing:2px;color:#ff4757;text-transform:uppercase;margin:12px 0 8px;">🔁 Triggers</div>
+        ${data.triggers.map(t=>`<div style="font-size:0.78rem;color:#e2eaf5;padding:5px 0 5px 10px;border-left:2px solid #ff475755;margin-bottom:5px;">• ${t}</div>`).join('')}` : ''}
+      </div>
+
+      <!-- Disclaimer -->
+      <div style="text-align:center;font-size:0.68rem;color:#4a6080;padding:10px;border-top:1px solid #1a2d47;">
+        ⚠️ รายงานนี้จัดทำเพื่อการศึกษาเท่านั้น ไม่ใช่คำแนะนำการลงทุน
+      </div>`;
+      return html;
+    }
 
     // done all
     for(let i=1;i<=4;i++) { document.getElementById('card'+i).classList.remove('active'); document.getElementById('card'+i).classList.add('done'); }
     setStatus(4, '✓ เสร็จแล้ว');
-    setOutput(4, a4);
+    setOutput(4, renderAgent4(a4json));
 
   } catch(e) {
     setOutput(1, `<span class="error-msg">❌ Error: ${e.message}</span>`);
