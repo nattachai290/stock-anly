@@ -463,9 +463,9 @@
 
   <!-- API Key Zone -->
   <div class="apikey-zone">
-    <span class="apikey-label">🔑 Gemini API Key</span>
-    <input type="password" class="apikey-input" id="apiKeyInput" placeholder="AIza..." autocomplete="off" oninput="onApiKeyChange()" />
-    <span class="apikey-status" id="apiKeyStatus" style="color:var(--muted)">ยังไม่ได้ใส่ — รับฟรีที่ aistudio.google.com</span>
+    <span class="apikey-label">🔑 Groq API Key</span>
+    <input type="password" class="apikey-input" id="apiKeyInput" placeholder="gsk_..." autocomplete="off" oninput="onApiKeyChange()" />
+    <span class="apikey-status" id="apiKeyStatus" style="color:var(--muted)">ยังไม่ได้ใส่ — รับฟรีที่ console.groq.com</span>
     <button class="btn-clear-all" onclick="clearApiKey()" title="ลบ API Key">✕ Clear</button>
   </div>
 
@@ -537,7 +537,7 @@
       <div class="agent-icon">🔍</div>
       <div class="agent-num">Agent 02</div>
       <div class="agent-name">Research Analyst</div>
-      <div class="agent-desc">ค้นหาข่าว, earning calls, analyst ratings แบบ real-time ผ่าน Web Search</div>
+      <div class="agent-desc">วิเคราะห์ข่าว, earning calls, analyst ratings จากข้อมูล training data ล่าสุด</div>
       <div class="agent-status"><div class="status-dot"></div><span id="status2">รอคำสั่ง</span></div>
     </div>
     <div class="agent-card" id="card3" style="--agent-color: #ff6b35">
@@ -595,9 +595,9 @@ function getApiKey() { return document.getElementById('apiKeyInput').value.trim(
 function onApiKeyChange() {
   const key = getApiKey();
   const el = document.getElementById('apiKeyStatus');
-  if (!key) { el.textContent = 'ยังไม่ได้ใส่ — รับฟรีที่ aistudio.google.com'; el.style.color = 'var(--muted)'; return; }
-  if (key.startsWith('AIza') && key.length > 20) { el.textContent = '✓ พร้อมใช้งาน'; el.style.color = 'var(--accent2)'; }
-  else { el.textContent = '⚠️ รูปแบบไม่ถูกต้อง (ควรขึ้นต้นด้วย AIza)'; el.style.color = 'var(--danger)'; }
+  if (!key) { el.textContent = 'ยังไม่ได้ใส่ — รับฟรีที่ console.groq.com'; el.style.color = 'var(--muted)'; return; }
+  if (key.startsWith('gsk_') && key.length > 20) { el.textContent = '✓ พร้อมใช้งาน'; el.style.color = 'var(--accent2)'; }
+  else { el.textContent = '⚠️ รูปแบบไม่ถูกต้อง (ควรขึ้นต้นด้วย gsk_)'; el.style.color = 'var(--danger)'; }
 }
 function clearApiKey() {
   document.getElementById('apiKeyInput').value = '';
@@ -816,21 +816,24 @@ function setOutput(n, html) {
   switchTab(n);
 }
 
-// --- Gemini API call (no search) ---
+// --- Groq API call ---
 async function callClaude(systemPrompt, userPrompt) {
   const key = getApiKey();
-  const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-lite:generateContent?key=${key}`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
+  const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${key}` },
     body: JSON.stringify({
-      systemInstruction: { parts: [{ text: systemPrompt }] },
-      contents: [{ role: "user", parts: [{ text: userPrompt }] }],
-      generationConfig: { maxOutputTokens: 4000 }
+      model: 'llama-3.3-70b-versatile',
+      max_tokens: 4000,
+      messages: [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: userPrompt }
+      ]
     })
   });
   const data = await res.json();
   if (data.error) throw new Error(data.error.message || JSON.stringify(data.error));
-  return data.candidates[0].content.parts[0].text;
+  return data.choices[0].message.content;
 }
 
 // --- Claude API call สำหรับ Agent 1 แบบ chunk (ทีละ 10 หุ้น) ---
@@ -871,30 +874,16 @@ async function callClaudeChunked(systemPrompt, stockList) {
   return results;
 }
 
-// --- Gemini API call with Google Search grounding ---
+// --- Groq API call with search (uses model knowledge, no live search) ---
 async function callClaudeWithSearch(systemPrompt, userPrompt) {
-  const key = getApiKey();
-  const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-lite:generateContent?key=${key}`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      systemInstruction: { parts: [{ text: systemPrompt }] },
-      contents: [{ role: "user", parts: [{ text: userPrompt }] }],
-      tools: [{ google_search: {} }],
-      generationConfig: { maxOutputTokens: 2000 }
-    })
-  });
-  const data = await res.json();
-  if (data.error) throw new Error(data.error.message || JSON.stringify(data.error));
-  const parts = (data.candidates[0].content.parts || []);
-  return parts.filter(p => p.text).map(p => p.text).join('\n') || '(ไม่พบข้อมูล)';
+  return callClaude(systemPrompt, userPrompt);
 }
 
 // --- Main ---
 async function runAgents() {
   const stocks = [...selectedStocks];
   if (stocks.length === 0) { alert('กรุณาเลือกหุ้นอย่างน้อย 1 ตัว'); return; }
-  if (!getApiKey()) { alert('กรุณาใส่ Gemini API Key ก่อน\nรับฟรีได้ที่ aistudio.google.com'); return; }
+  if (!getApiKey()) { alert('กรุณาใส่ Groq API Key ก่อน\nรับฟรีได้ที่ console.groq.com'); return; }
 
   const btn = document.getElementById('runBtn');
   btn.disabled = true;
