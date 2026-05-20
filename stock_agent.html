@@ -244,7 +244,7 @@
     border: 1px solid rgba(0,255,157,0.35);
     border-radius: 16px;
     padding: 16px 24px;
-    margin-bottom: 20px;
+    margin-bottom: 8px;
     display: flex;
     align-items: center;
     gap: 12px;
@@ -466,7 +466,13 @@
     <span class="apikey-label">🔑 Groq API Key</span>
     <input type="password" class="apikey-input" id="apiKeyInput" placeholder="gsk_..." autocomplete="off" oninput="onApiKeyChange()" />
     <span class="apikey-status" id="apiKeyStatus" style="color:var(--muted)">ยังไม่ได้ใส่ — รับฟรีที่ console.groq.com</span>
-    <button class="btn-clear-all" onclick="clearApiKey()" title="ลบ API Key">✕ Clear</button>
+    <button class="btn-clear-all" onclick="clearApiKey()">✕ Clear</button>
+  </div>
+  <div class="apikey-zone" style="border-color:rgba(167,139,250,0.35); margin-bottom:20px;">
+    <span class="apikey-label" style="color:var(--accent4)">🔍 Tavily API Key</span>
+    <input type="password" class="apikey-input" id="tavilyKeyInput" placeholder="tvly-..." autocomplete="off" oninput="onTavilyKeyChange()" style="border-color:var(--border);" />
+    <span class="apikey-status" id="tavilyKeyStatus" style="color:var(--muted)">ไม่บังคับ — Agent 2 ใช้ web search จริง · รับฟรีที่ app.tavily.com</span>
+    <button class="btn-clear-all" onclick="clearTavilyKey()">✕ Clear</button>
   </div>
 
   <!-- Input Zone -->
@@ -537,7 +543,7 @@
       <div class="agent-icon">🔍</div>
       <div class="agent-num">Agent 02</div>
       <div class="agent-name">Research Analyst</div>
-      <div class="agent-desc">วิเคราะห์ข่าว, earning calls, analyst ratings จากข้อมูล training data ล่าสุด</div>
+      <div class="agent-desc">ค้นหาข่าว, earning calls, analyst ratings แบบ real-time ผ่าน Tavily Web Search</div>
       <div class="agent-status"><div class="status-dot"></div><span id="status2">รอคำสั่ง</span></div>
     </div>
     <div class="agent-card" id="card3" style="--agent-color: #ff6b35">
@@ -599,9 +605,47 @@ function onApiKeyChange() {
   if (key.startsWith('gsk_') && key.length > 20) { el.textContent = '✓ พร้อมใช้งาน'; el.style.color = 'var(--accent2)'; }
   else { el.textContent = '⚠️ รูปแบบไม่ถูกต้อง (ควรขึ้นต้นด้วย gsk_)'; el.style.color = 'var(--danger)'; }
 }
-function clearApiKey() {
-  document.getElementById('apiKeyInput').value = '';
-  onApiKeyChange();
+function clearApiKey() { document.getElementById('apiKeyInput').value = ''; onApiKeyChange(); }
+
+function getTavilyKey() { return document.getElementById('tavilyKeyInput').value.trim(); }
+function onTavilyKeyChange() {
+  const key = getTavilyKey();
+  const el = document.getElementById('tavilyKeyStatus');
+  if (!key) { el.textContent = 'ไม่บังคับ — Agent 2 ใช้ web search จริง · รับฟรีที่ app.tavily.com'; el.style.color = 'var(--muted)'; return; }
+  if (key.startsWith('tvly-') && key.length > 10) { el.textContent = '✓ Agent 2 จะใช้ Web Search จริง'; el.style.color = 'var(--accent4)'; }
+  else { el.textContent = '⚠️ รูปแบบไม่ถูกต้อง (ควรขึ้นต้นด้วย tvly-)'; el.style.color = 'var(--danger)'; }
+}
+function clearTavilyKey() { document.getElementById('tavilyKeyInput').value = ''; onTavilyKeyChange(); }
+
+async function searchWeb(stocks) {
+  const key = getTavilyKey();
+  if (!key || !stocks.length) return '';
+  const now = new Date();
+  const yr = now.getFullYear();
+  const results = [];
+  for (const stock of stocks) {
+    try {
+      const res = await fetch('https://api.tavily.com/search', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          api_key: key,
+          query: `${stock} stock earnings news analyst rating ${yr}`,
+          search_depth: 'basic',
+          max_results: 3,
+          include_answer: false
+        })
+      });
+      const data = await res.json();
+      if (data.results?.length) {
+        const items = data.results.map(r =>
+          `• ${r.title} (${r.url})\n  ${(r.content || '').substring(0, 250)}`
+        ).join('\n');
+        results.push(`=== ${stock} Web Results ===\n${items}`);
+      }
+    } catch(e) {}
+  }
+  return results.join('\n\n');
 }
 
 // --- State ---
@@ -874,9 +918,13 @@ async function callClaudeChunked(systemPrompt, stockList) {
   return results;
 }
 
-// --- Groq API call with search (uses model knowledge, no live search) ---
-async function callClaudeWithSearch(systemPrompt, userPrompt) {
-  return callClaude(systemPrompt, userPrompt);
+// --- Groq + Tavily web search ---
+async function callClaudeWithSearch(systemPrompt, userPrompt, stocks = []) {
+  const webData = await searchWeb(stocks);
+  const prompt = webData
+    ? `${userPrompt}\n\n=== ข้อมูลจาก Web Search (real-time) ===\n${webData}`
+    : userPrompt;
+  return callClaude(systemPrompt, prompt);
 }
 
 // --- Main ---
@@ -1003,7 +1051,7 @@ async function runAgents() {
     const a2parts = [];
     for (let i = 0; i < a2chunks.length; i++) {
       setStatus(2, `กำลังค้นหา ${i*5+1}-${Math.min((i+1)*5, stocks.length)} / ${stocks.length} หุ้น...`);
-      const part = await callClaudeWithSearch(a2system, a2prompt(a2chunks[i]));
+      const part = await callClaudeWithSearch(a2system, a2prompt(a2chunks[i]), a2chunks[i]);
       a2parts.push(part);
       // update output แบบ live ทีละ chunk
       setOutput(2, renderAgent2(a2parts.join('\n\n---\n\n')));
