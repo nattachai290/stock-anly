@@ -1,0 +1,865 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Stock Intelligence — Multi-Agent System</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #080c14;
+    --surface: #0d1520;
+    --surface2: #111d2e;
+    --border: #1a2d47;
+    --accent: #00d4ff;
+    --accent2: #00ff9d;
+    --accent3: #ff6b35;
+    --accent4: #a78bfa;
+    --text: #e2eaf5;
+    --muted: #4a6080;
+    --danger: #ff4757;
+    --gold: #ffd700;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Grid BG */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: 
+      linear-gradient(rgba(0,212,255,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,212,255,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container { max-width: 1100px; margin: 0 auto; padding: 32px 20px; position: relative; z-index: 1; }
+
+  /* Header */
+  header { text-align: center; margin-bottom: 40px; }
+  header h1 {
+    font-family: 'Space Mono', monospace;
+    font-size: clamp(1.4rem, 4vw, 2.2rem);
+    letter-spacing: -1px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 6px;
+  }
+  header p { color: var(--muted); font-size: 0.85rem; letter-spacing: 2px; text-transform: uppercase; }
+
+  /* Input Zone */
+  .input-zone {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 24px;
+    margin-bottom: 32px;
+  }
+
+  .input-zone-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+    gap: 8px;
+  }
+  .input-zone-header-left { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .input-label { font-size: 0.72rem; letter-spacing: 2px; text-transform: uppercase; color: var(--muted); }
+  .selected-count {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.7rem;
+    background: rgba(0,212,255,0.1);
+    border: 1px solid rgba(0,212,255,0.3);
+    color: var(--accent);
+    padding: 2px 10px;
+    border-radius: 20px;
+    white-space: nowrap;
+  }
+  .btn-clear-all {
+    font-size: 0.68rem;
+    font-family: 'Space Mono', monospace;
+    color: var(--muted);
+    background: none;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 4px 10px;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+  }
+  .btn-clear-all:hover { color: var(--danger); border-color: var(--danger); }
+
+  /* scrollable chip area */
+  .stock-grid-wrap {
+    max-height: 160px;
+    overflow-y: auto;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 10px;
+    margin-bottom: 4px;
+    background: var(--surface2);
+  }
+  .stock-grid-wrap::-webkit-scrollbar { width: 4px; }
+  .stock-grid-wrap::-webkit-scrollbar-track { background: transparent; }
+  .stock-grid-wrap::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+  .stock-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 7px;
+  }
+  .chip {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 5px 12px;
+    font-family: 'Space Mono', monospace;
+    font-size: 0.76rem;
+    color: var(--muted);
+    cursor: pointer;
+    transition: all 0.15s;
+    display: flex; align-items: center; gap: 5px;
+    user-select: none;
+  }
+  .chip:hover { border-color: var(--accent); color: var(--accent); background: rgba(0,212,255,0.06); }
+  .chip.selected {
+    border-color: var(--accent2);
+    color: var(--accent2);
+    background: rgba(0,255,157,0.08);
+    font-weight: 700;
+  }
+  .chip.selected::before { content: '✓ '; font-size: 0.65rem; }
+  .chip.custom-chip { border-style: dashed; }
+  .chip.custom-chip .del-btn {
+    margin-left: 2px;
+    color: var(--muted);
+    font-size: 0.6rem;
+    line-height: 1;
+    padding: 0 2px;
+    border-radius: 3px;
+    transition: color 0.15s;
+  }
+  .chip.custom-chip:hover .del-btn { color: var(--danger); }
+
+  /* Selected preview bar */
+  .selected-bar {
+    margin-top: 14px;
+    min-height: 32px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .selected-bar-label { font-size: 0.68rem; color: var(--muted); letter-spacing: 1px; text-transform: uppercase; white-space: nowrap; }
+  .sel-badge {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.72rem;
+    padding: 3px 10px;
+    border-radius: 4px;
+    background: rgba(0,255,157,0.12);
+    border: 1px solid rgba(0,255,157,0.35);
+    color: var(--accent2);
+  }
+  .empty-hint { font-size: 0.72rem; color: var(--muted); font-style: italic; }
+
+  /* Add custom stock row */
+  .add-stock-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    margin-top: 14px;
+  }
+  .add-stock-row input {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 14px;
+    color: var(--text);
+    font-family: 'Space Mono', monospace;
+    font-size: 0.8rem;
+    width: 130px;
+    outline: none;
+    text-transform: uppercase;
+    transition: border 0.2s;
+  }
+  .add-stock-row input:focus { border-color: var(--accent); }
+  .add-stock-row input::placeholder { color: var(--muted); text-transform: none; font-size: 0.72rem; }
+  .btn-add {
+    background: rgba(0,212,255,0.1);
+    border: 1px solid rgba(0,212,255,0.4);
+    color: var(--accent);
+    border-radius: 8px;
+    padding: 8px 14px;
+    cursor: pointer;
+    font-size: 0.78rem;
+    font-family: 'Space Mono', monospace;
+    transition: all 0.2s;
+    white-space: nowrap;
+  }
+  .btn-add:hover { background: rgba(0,212,255,0.2); }
+
+  .save-row { display: flex; align-items: center; gap: 10px; margin-top: 6px; min-height: 18px; }
+  .btn-run {
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border: none;
+    border-radius: 10px;
+    padding: 13px 28px;
+    color: #080c14;
+    font-weight: 700;
+    font-size: 0.9rem;
+    cursor: pointer;
+    font-family: 'Space Mono', monospace;
+    letter-spacing: 1px;
+    transition: all 0.2s;
+    width: 100%;
+    margin-top: 18px;
+  }
+  .btn-run:hover { opacity: 0.9; transform: translateY(-1px); box-shadow: 0 8px 24px rgba(0,212,255,0.2); }
+  .btn-run:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+  /* Agent Pipeline */
+  .pipeline { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 32px; }
+
+  .agent-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 20px;
+    position: relative;
+    overflow: hidden;
+    transition: border-color 0.3s;
+  }
+  .agent-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: var(--agent-color, var(--border));
+    transition: all 0.4s;
+  }
+  .agent-card.active::before { box-shadow: 0 0 20px var(--agent-color); }
+  .agent-card.active { border-color: var(--agent-color); }
+  .agent-card.done { opacity: 0.7; }
+
+  .agent-icon { font-size: 1.6rem; margin-bottom: 10px; }
+  .agent-num {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.65rem;
+    color: var(--agent-color);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+  .agent-name { font-weight: 600; font-size: 0.95rem; margin-bottom: 6px; }
+  .agent-desc { font-size: 0.75rem; color: var(--muted); line-height: 1.5; }
+  .agent-status {
+    margin-top: 12px;
+    font-size: 0.72rem;
+    font-family: 'Space Mono', monospace;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .status-dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--muted);
+    transition: all 0.3s;
+  }
+  .agent-card.active .status-dot {
+    background: var(--agent-color);
+    box-shadow: 0 0 8px var(--agent-color);
+    animation: blink 1s infinite;
+  }
+  .agent-card.done .status-dot { background: var(--accent2); }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+  /* Flow arrows */
+  .flow-arrows { display: flex; justify-content: center; gap: 4px; margin-bottom: 16px; }
+  .arrow { color: var(--muted); font-size: 0.7rem; letter-spacing: 1px; }
+
+  /* Output Tabs */
+  .output-section { display: none; }
+  .output-section.visible { display: block; animation: slideIn 0.3s ease; }
+  @keyframes slideIn { from { opacity:0; transform:translateY(8px) } to { opacity:1; transform:none } }
+
+  .tab-bar {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 0;
+    flex-wrap: wrap;
+  }
+  .tab-btn {
+    display: flex; align-items: center; gap: 7px;
+    padding: 10px 16px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-bottom: none;
+    border-radius: 10px 10px 0 0;
+    cursor: pointer;
+    font-family: 'Space Mono', monospace;
+    font-size: 0.72rem;
+    color: var(--muted);
+    transition: all 0.2s;
+    position: relative;
+    white-space: nowrap;
+  }
+  .tab-btn:hover { color: var(--text); border-color: var(--agent-color); }
+  .tab-btn.active {
+    background: var(--surface2);
+    color: var(--agent-color);
+    border-color: var(--agent-color);
+    border-bottom-color: var(--surface2);
+    z-index: 1;
+  }
+  .tab-btn .tab-dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--muted);
+    transition: all 0.3s;
+    flex-shrink: 0;
+  }
+  .tab-btn.agent-active .tab-dot {
+    background: var(--agent-color);
+    box-shadow: 0 0 6px var(--agent-color);
+    animation: blink 1s infinite;
+  }
+  .tab-btn.agent-done .tab-dot { background: var(--accent2); }
+  .tab-btn.disabled { opacity: 0.35; cursor: not-allowed; }
+
+  .tab-panel-wrapper {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 0 10px 10px 10px;
+    overflow: hidden;
+    min-height: 200px;
+  }
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; animation: slideIn 0.25s ease; }
+
+  .output-body {
+    padding: 22px;
+    font-size: 0.85rem;
+    line-height: 1.8;
+    color: var(--text);
+    min-height: 180px;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+  .output-body .loading {
+    color: var(--muted);
+    font-family: 'Space Mono', monospace;
+    font-size: 0.78rem;
+    display: flex; align-items: center; gap: 8px;
+    padding-top: 8px;
+  }
+  .output-body .idle {
+    color: var(--muted);
+    font-family: 'Space Mono', monospace;
+    font-size: 0.75rem;
+    opacity: 0.5;
+  }
+  .spinner {
+    width: 14px; height: 14px;
+    border: 2px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    flex-shrink: 0;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .stock-list { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+  .stock-badge {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.75rem;
+    padding: 5px 12px;
+    border-radius: 6px;
+    border: 1px solid var(--accent);
+    color: var(--accent);
+    background: rgba(0,212,255,0.08);
+  }
+  .error-msg { color: var(--danger); font-family: 'Space Mono', monospace; font-size: 0.78rem; }
+
+  /* Responsive */
+  @media (max-width: 600px) {
+    .pipeline { grid-template-columns: 1fr 1fr; }
+    .tab-btn { padding: 8px 11px; font-size: 0.65rem; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <h1>⬡ STOCK INTELLIGENCE</h1>
+    <p>Multi-Agent Analysis System · US Markets</p>
+  </header>
+
+  <!-- Input Zone -->
+  <div class="input-zone">
+    <div class="input-zone-header">
+      <div class="input-zone-header-left">
+        <div class="input-label">เลือกหุ้นที่ต้องการวิเคราะห์</div>
+        <span class="selected-count" id="selectedCount">0 ตัว</span>
+      </div>
+      <div style="display:flex; gap:8px; align-items:center;">
+        <span id="storageBadge" style="display:none; font-size:0.68rem; font-family:'Space Mono',monospace; color:var(--accent2); background:rgba(0,255,157,0.08); border:1px solid var(--accent2); border-radius:4px; padding:2px 8px; transition:opacity 1s;"></span>
+        <button class="btn-clear-all" onclick="clearAll()">ล้างทั้งหมด</button>
+      </div>
+    </div>
+
+    <!-- All stock chips (A-Z) -->
+    <div class="stock-grid-wrap">
+      <div class="stock-grid" id="stockGrid"></div>
+    </div>
+
+    <!-- Add custom -->
+    <div class="add-stock-row">
+      <input type="text" id="customStock" placeholder="พิมพ์ ticker เช่น TSLA" maxlength="6" />
+      <button class="btn-add" onclick="addCustomStock()">+ เพิ่มหุ้น</button>
+      <span id="saveIndicator" style="font-size:0.68rem; font-family:'Space Mono',monospace; color:var(--accent2); opacity:0; transition:opacity 0.5s;"></span>
+    </div>
+
+    <button class="btn-run" id="runBtn" onclick="runAgents()">▶ เริ่มวิเคราะห์</button>
+  </div>
+
+  <!-- Agent Pipeline -->
+  <div class="pipeline">
+    <div class="agent-card" id="card1" style="--agent-color: #00d4ff">
+      <div class="agent-icon">📋</div>
+      <div class="agent-num">Agent 01</div>
+      <div class="agent-name">Portfolio Manager</div>
+      <div class="agent-desc">จัดการและคัดกรองรายชื่อหุ้นที่ต้องการวิเคราะห์</div>
+      <div class="agent-status"><div class="status-dot"></div><span id="status1">รอคำสั่ง</span></div>
+    </div>
+    <div class="agent-card" id="card2" style="--agent-color: #a78bfa">
+      <div class="agent-icon">🔍</div>
+      <div class="agent-num">Agent 02</div>
+      <div class="agent-name">Research Analyst</div>
+      <div class="agent-desc">ค้นหาข่าว, earning calls, analyst ratings แบบ real-time ผ่าน Web Search</div>
+      <div class="agent-status"><div class="status-dot"></div><span id="status2">รอคำสั่ง</span></div>
+    </div>
+    <div class="agent-card" id="card3" style="--agent-color: #ff6b35">
+      <div class="agent-icon">📊</div>
+      <div class="agent-num">Agent 03</div>
+      <div class="agent-name">Data Analyst</div>
+      <div class="agent-desc">วิเคราะห์ sentiment, risk, และ key insights</div>
+      <div class="agent-status"><div class="status-dot"></div><span id="status3">รอคำสั่ง</span></div>
+    </div>
+    <div class="agent-card" id="card4" style="--agent-color: #00ff9d">
+      <div class="agent-icon">📝</div>
+      <div class="agent-num">Agent 04</div>
+      <div class="agent-name">Report Writer</div>
+      <div class="agent-desc">สรุปรายงานพร้อม recommendation อ่านง่าย</div>
+      <div class="agent-status"><div class="status-dot"></div><span id="status4">รอคำสั่ง</span></div>
+    </div>
+  </div>
+
+  <!-- Output Tabs -->
+  <div class="output-section" id="outputSection">
+    <div class="tab-bar">
+      <div class="tab-btn disabled" id="tab1" style="--agent-color:#00d4ff" onclick="switchTab(1)">
+        <span class="tab-dot"></span>📋 Portfolio Manager
+      </div>
+      <div class="tab-btn disabled" id="tab2" style="--agent-color:#a78bfa" onclick="switchTab(2)">
+        <span class="tab-dot"></span>🔍 Research Analyst
+      </div>
+      <div class="tab-btn disabled" id="tab3" style="--agent-color:#ff6b35" onclick="switchTab(3)">
+        <span class="tab-dot"></span>📊 Data Analyst
+      </div>
+      <div class="tab-btn disabled" id="tab4" style="--agent-color:#00ff9d" onclick="switchTab(4)">
+        <span class="tab-dot"></span>📝 Report Writer
+      </div>
+    </div>
+    <div class="tab-panel-wrapper">
+      <div class="tab-panel" id="panel1">
+        <div class="output-body" id="outBody1"><div class="idle">— รอการทำงาน —</div></div>
+      </div>
+      <div class="tab-panel" id="panel2">
+        <div class="output-body" id="outBody2"><div class="idle">— รอการทำงาน —</div></div>
+      </div>
+      <div class="tab-panel" id="panel3">
+        <div class="output-body" id="outBody3"><div class="idle">— รอการทำงาน —</div></div>
+      </div>
+      <div class="tab-panel" id="panel4">
+        <div class="output-body" id="outBody4"><div class="idle">— รอการทำงาน —</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// --- State ---
+const DEFAULT_STOCKS = [];
+const STORAGE_KEY = 'stock-agent:v2:selected';
+const FALLBACK_KEY = 'stock_agent_v2';
+let selectedStocks = new Set();
+let customStocks = new Set();
+
+function getAllStocksSorted() {
+  // รวมทั้ง selected และ custom เพื่อให้ chip แสดงหุ้นที่เลือกไว้เสมอ
+  return [...new Set([...selectedStocks, ...customStocks])].sort();
+}
+
+function renderGrid() {
+  const grid = document.getElementById('stockGrid');
+  grid.innerHTML = '';
+  getAllStocksSorted().forEach(s => {
+    const isSel = selectedStocks.has(s);
+    const isCust = customStocks.has(s);
+    const chip = document.createElement('div');
+    chip.className = 'chip' + (isSel ? ' selected' : '') + (isCust ? ' custom-chip' : '');
+    if (isCust) {
+      chip.innerHTML = `${s}<span class="del-btn" onclick="event.stopPropagation();removeCustom('${s}')">✕</span>`;
+    } else {
+      chip.textContent = s;
+    }
+    chip.onclick = () => {
+      selectedStocks.has(s) ? selectedStocks.delete(s) : selectedStocks.add(s);
+      renderGrid(); updateCount(); saveStocks();
+    };
+    grid.appendChild(chip);
+  });
+}
+
+function updateCount() {
+  document.getElementById('selectedCount').textContent = `${selectedStocks.size} ตัว`;
+}
+
+function clearAll() {
+  selectedStocks.clear();
+  customStocks.clear();
+  renderGrid(); updateCount(); saveStocks();
+}
+
+function removeCustom(s) {
+  customStocks.delete(s); selectedStocks.delete(s);
+  renderGrid(); updateCount(); saveStocks();
+}
+
+function addCustomStock() {
+  const inp = document.getElementById('customStock');
+  const v = inp.value.trim().toUpperCase();
+  if (!v || v.length < 1 || v.length > 6) { inp.value = ''; return; }
+  if (!customStocks.has(v)) customStocks.add(v);
+  selectedStocks.add(v);
+  renderGrid(); updateCount(); saveStocks();
+  inp.value = '';
+}
+
+// --- Persistent Storage (retry + fallback) ---
+async function saveStocks() {
+  const data = JSON.stringify({ selected: [...selectedStocks], custom: [...customStocks] });
+  for (let attempt = 1; attempt <= 2; attempt++) {
+    try {
+      await window.storage.set(STORAGE_KEY, data);
+      showSaveIndicator('💾 บันทึกแล้ว');
+      return;
+    } catch(e) {
+      if (attempt === 2) {
+        try { localStorage.setItem(FALLBACK_KEY, data); showSaveIndicator('💾 บันทึกแล้ว (local)'); }
+        catch(le) { showSaveIndicator('⚠️ บันทึกไม่ได้', true); }
+      } else { await new Promise(r => setTimeout(r, 800)); }
+    }
+  }
+}
+
+async function loadStocks() {
+  let saved = null;
+  try {
+    const result = await window.storage.get(STORAGE_KEY);
+    if (result && result.value) saved = JSON.parse(result.value);
+  } catch(e) {
+    try { const local = localStorage.getItem(FALLBACK_KEY); if (local) saved = JSON.parse(local); } catch(le) {}
+  }
+  if (saved) {
+    let selArr = [], custArr = [];
+    if (Array.isArray(saved)) {
+      // format เก่า — ทุกตัวถือเป็น custom และ selected
+      selArr = saved; custArr = saved;
+    } else {
+      selArr = saved.selected || [];
+      custArr = saved.custom || [];
+      // หุ้นที่ selected แต่ไม่อยู่ใน custom ให้เพิ่มเป็น custom ด้วย (ไม่งั้นไม่โผล่)
+      selArr.forEach(s => { if (!custArr.includes(s)) custArr.push(s); });
+    }
+    selectedStocks = new Set(selArr);
+    customStocks = new Set(custArr);
+    showStorageBadge(selectedStocks.size);
+  }
+  renderGrid(); updateCount();
+}
+
+function showSaveIndicator(msg, isError = false) {
+  const el = document.getElementById('saveIndicator');
+  if (!el) return;
+  el.textContent = msg; el.style.color = isError ? 'var(--danger)' : 'var(--accent2)';
+  el.style.opacity = '1'; setTimeout(() => el.style.opacity = '0', 2000);
+}
+
+function showStorageBadge(count) {
+  const badge = document.getElementById('storageBadge');
+  if (badge) { badge.textContent = `💾 โหลดจากครั้งก่อน (${count} ตัว)`; badge.style.display = 'inline-block'; setTimeout(() => { badge.style.opacity = '0'; }, 2500); }
+}
+
+document.getElementById('customStock').addEventListener('keydown', e => { if(e.key === 'Enter') addCustomStock(); });
+loadStocks();
+
+// --- Tab UI ---
+let activeTab = 1;
+
+function switchTab(n) {
+  const tab = document.getElementById('tab'+n);
+  if (tab.classList.contains('disabled')) return;
+  activeTab = n;
+  for(let i=1;i<=4;i++) {
+    document.getElementById('tab'+i).classList.toggle('active', i===n);
+    document.getElementById('panel'+i).classList.toggle('active', i===n);
+  }
+}
+
+function unlockTab(n) {
+  const tab = document.getElementById('tab'+n);
+  tab.classList.remove('disabled');
+}
+
+// --- Agent UI helpers ---
+function setActive(n) {
+  document.getElementById('outputSection').classList.add('visible');
+  for(let i=1;i<=4;i++) {
+    const card = document.getElementById('card'+i);
+    const tab = document.getElementById('tab'+i);
+    card.classList.remove('active','done');
+    tab.classList.remove('agent-active','agent-done');
+    if(i < n) { card.classList.add('done'); tab.classList.add('agent-done'); }
+    if(i === n) { card.classList.add('active'); tab.classList.add('agent-active'); unlockTab(n); switchTab(n); }
+  }
+}
+function setStatus(n, txt) { document.getElementById('status'+n).textContent = txt; }
+function setOutput(n, html) {
+  document.getElementById('outBody'+n).innerHTML = html;
+  // auto switch to completed tab
+  switchTab(n);
+}
+
+// --- Claude API call (no search) ---
+async function callClaude(systemPrompt, userPrompt) {
+  const res = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      model: "claude-sonnet-4-20250514",
+      max_tokens: 1000,
+      system: systemPrompt,
+      messages: [{ role: "user", content: userPrompt }]
+    })
+  });
+  const data = await res.json();
+  if (data.error) throw new Error(data.error.message);
+  return data.content[0].text;
+}
+
+// --- Claude API call with Web Search ---
+async function callClaudeWithSearch(systemPrompt, userPrompt) {
+  const res = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      model: "claude-sonnet-4-20250514",
+      max_tokens: 2000,
+      system: systemPrompt,
+      tools: [{ type: "web_search_20250305", name: "web_search" }],
+      messages: [{ role: "user", content: userPrompt }]
+    })
+  });
+  const data = await res.json();
+  if (data.error) throw new Error(data.error.message);
+  // รวม text ทั้งหมดจาก content blocks
+  const text = (data.content || [])
+    .filter(b => b.type === 'text')
+    .map(b => b.text)
+    .join('\n');
+  return text || '(ไม่พบข้อมูล)';
+}
+
+// --- Main ---
+async function runAgents() {
+  const stocks = [...selectedStocks];
+  if (stocks.length === 0) { alert('กรุณาเลือกหุ้นอย่างน้อย 1 ตัว'); return; }
+
+  const btn = document.getElementById('runBtn');
+  btn.disabled = true;
+  btn.textContent = '⏳ กำลังวิเคราะห์...';
+
+  // reset
+  document.getElementById('outputSection').classList.remove('visible');
+  for(let i=1;i<=4;i++) {
+    document.getElementById('outBody'+i).innerHTML = '<div class="idle">— รอการทำงาน —</div>';
+    document.getElementById('card'+i).classList.remove('active','done');
+    document.getElementById('tab'+i).classList.remove('active','agent-active','agent-done','disabled');
+    document.getElementById('tab'+i).classList.add('disabled');
+    document.getElementById('panel'+i).classList.remove('active');
+    setStatus(i, 'รอคำสั่ง');
+  }
+
+  try {
+    // ── AGENT 1 ──
+    setActive(1); setStatus(1, 'กำลังทำงาน...');
+    setOutput(1, '<div class="loading"><div class="spinner"></div> กำลังประมวลผล...</div>');
+    const a1 = await callClaude(
+      `คุณคือ Senior Portfolio Manager จาก Goldman Sachs ที่มีประสบการณ์ 20 ปีด้าน US Equity
+ตอบภาษาไทย กระชับ มืออาชีพ ใช้ข้อมูล fundamental ที่รู้จักจาก training data
+ห้ามแต่งข้อมูลที่ไม่รู้จริง`,
+      `วิเคราะห์ portfolio composition ของหุ้น: ${stocks.join(', ')}
+
+สำหรับแต่ละหุ้นระบุ:
+1. Sector / Industry / Sub-industry (GICS classification)
+2. Market Cap tier (Mega/Large/Mid cap) และ Index membership (S&P500, Nasdaq100, DJIA)
+3. Business model หลัก และ revenue streams สำคัญ
+4. Competitive moat (Network effect / Cost advantage / Switching cost / Intangible asset)
+
+จากนั้นวิเคราะห์ Portfolio ภาพรวม:
+5. Sector concentration risk — หุ้นกลุ่มไหนหนักเกินไป?
+6. Correlation risk — หุ้นไหนมักเคลื่อนไหวไปทิศทางเดียวกัน?
+7. กลยุทธ์ที่เหมาะ: Growth / GARP / Value / Momentum
+8. ความเสี่ยงหลักของ portfolio นี้ใน macro environment ปัจจุบัน (Fed policy, USD strength, recession risk)`
+    );
+    setStatus(1, '✓ เสร็จแล้ว');
+    setOutput(1, `<div class="stock-list">${stocks.map(s=>`<span class="stock-badge">${s}</span>`).join('')}</div><br>${a1}`);
+
+    // ── AGENT 2 (Web Search) ──
+    setActive(2); setStatus(2, 'กำลังค้นหาข้อมูล real-time...');
+    setOutput(2, '<div class="loading"><div class="spinner"></div> กำลังค้นหาข้อมูล real-time...</div>');
+    const a2 = await callClaudeWithSearch(
+      `คุณคือ Senior Equity Research Analyst ที่เชี่ยวชาญด้าน US stocks
+ค้นหาข้อมูลล่าสุดจากอินเทอร์เน็ตทุกครั้ง ห้ามใช้ความรู้เก่าจาก training data โดยไม่ค้นยืนยันก่อน
+ตอบภาษาไทย ละเอียด มีตัวเลขอ้างอิง ระบุแหล่งที่มาทุกครั้ง`,
+      `ค้นหาข้อมูลล่าสุดสำหรับหุ้นแต่ละตัว: ${stocks.join(', ')}
+
+ค้นหา keyword เหล่านี้สำหรับแต่ละ ticker:
+- "[TICKER] earnings call transcript Q1 Q2 2025"
+- "[TICKER] EPS beat miss revenue guidance 2025"
+- "[TICKER] analyst upgrade downgrade price target 2025"
+- "[TICKER] insider buying selling SEC 8-K 13F filing"
+- "[TICKER] share buyback dividend announcement"
+- "[TICKER] news investor day product launch partnership"
+
+สรุปต่อหุ้น:
+1. 📊 Earnings ล่าสุด: EPS actual vs estimate, Revenue actual vs estimate, YoY growth %
+2. 🎙️ Earning Call: CEO/CFO guidance, คำพูดสำคัญ, outlook ปีหน้า
+3. 📰 ข่าวสำคัญ 1-3 เดือนล่าสุด (เรียงจากใหม่ไปเก่า)
+4. 🎯 Analyst consensus: average price target, จำนวน Buy/Hold/Sell rating
+5. 🏛️ Insider activity: มีการซื้อ/ขายหุ้นของผู้บริหารไหม?
+ระบุวันที่และแหล่งที่มาของข้อมูลทุกรายการ`
+    );
+    setStatus(2, '✓ เสร็จแล้ว');
+    setOutput(2, a2);
+
+    // ── AGENT 3 ──
+    setActive(3); setStatus(3, 'กำลังวิเคราะห์เชิงลึก...');
+    setOutput(3, '<div class="loading"><div class="spinner"></div> กำลังวิเคราะห์...</div>');
+    const a3 = await callClaude(
+      `คุณคือ Quantitative Analyst และ Risk Manager ระดับ CFA ที่เชี่ยวชาญด้าน US equity
+วิเคราะห์เชิงลึกโดยอิงข้อมูลที่ได้รับ ตอบภาษาไทย มีตัวเลขและเหตุผลชัดเจน`,
+      `วิเคราะห์หุ้น ${stocks.join(', ')} จากข้อมูลต่อไปนี้:
+
+=== ข้อมูล Portfolio Context (Agent 1) ===
+${a1}
+
+=== ข้อมูล Research & ข่าวล่าสุด (Agent 2) ===
+${a2}
+
+กรุณาวิเคราะห์:
+
+1. 📈 Sentiment Analysis ต่อหุ้น:
+   - Sentiment: Bullish / Bearish / Neutral พร้อม confidence level (%)
+   - เหตุผลหลัก 2-3 ข้อ
+   - Short-term (1-3 เดือน) vs Long-term (6-12 เดือน) outlook ต่างกันไหม?
+
+2. ⚠️ Risk Assessment ต่อหุ้น:
+   - Risk Score 1-10 (10 = เสี่ยงสูงสุด)
+   - ประเภทความเสี่ยง: Business / Financial / Valuation / Macro / Regulatory
+   - Downside scenario ที่แย่ที่สุดคืออะไร?
+
+3. 🔑 Key Catalysts ต่อหุ้น:
+   - Positive catalysts ที่รอ (earnings, product launch, FDA approval ฯลฯ)
+   - Negative catalysts ที่ต้องระวัง
+
+4. 🔗 Portfolio Correlation Analysis:
+   - หุ้นไหน high correlation กัน? (ถ้า 1 ตัวร่วง อาจลากตัวอื่น)
+   - Beta ประมาณเท่าไหร่เทียบกับ S&P500?
+   - Portfolio มี diversification ที่ดีพอไหม?
+
+5. 📉 Valuation Red Flags:
+   - หุ้นตัวไหนดูแพงหรือถูกผิดปกติเทียบกับ sector peer?`
+    );
+    setStatus(3, '✓ เสร็จแล้ว');
+    setOutput(3, a3);
+
+    // ── AGENT 4 ──
+    setActive(4); setStatus(4, 'กำลังเขียนรายงานสรุป...');
+    setOutput(4, '<div class="loading"><div class="spinner"></div> กำลังเขียนรายงาน...</div>');
+    const a4 = await callClaude(
+      `คุณคือ Chief Investment Strategist ที่เขียนรายงานให้นักลงทุนระดับ institutional
+เขียนรายงานภาษาไทยที่อ่านง่าย กระชับ มีโครงสร้างชัดเจน ใช้ตัวเลขอ้างอิงจากข้อมูลที่มี
+ห้ามแต่งข้อมูลที่ไม่มีในข้อมูลที่ได้รับ`,
+      `เขียนรายงานการวิเคราะห์หุ้น ${stocks.join(', ')} จากข้อมูลทั้งหมด:
+
+=== Portfolio Context ===
+${a1}
+
+=== Research & News (Real-time) ===
+${a2}
+
+=== Deep Analysis ===
+${a3}
+
+โครงสร้างรายงาน:
+
+## 📋 Executive Summary
+(3-4 ประโยค ครอบคลุม key takeaway ของทั้ง portfolio)
+
+## 🎯 Investment Recommendation ต่อหุ้น
+สำหรับแต่ละหุ้น:
+- สัญญาณ: ✅ BUY / ⏸️ HOLD / ❌ SELL
+- เหตุผลหลัก (2-3 ข้อ)
+- Price target zone (ถ้ามีข้อมูล) และ Time horizon
+
+## 🛡️ Portfolio Risk Summary
+- Overall risk level: Low / Medium / High
+- จุดอ่อนหลักของ portfolio นี้
+- วิธี hedge หรือ rebalance ที่แนะนำ
+
+## ⚡ Action Items
+- สิ่งที่ต้องติดตามใน 30 วันข้างหน้า (earnings dates, events สำคัญ)
+- Trigger ที่จะเปลี่ยน recommendation
+
+---
+⚠️ Disclaimer: รายงานนี้จัดทำเพื่อการศึกษาเท่านั้น ไม่ใช่คำแนะนำการลงทุน การลงทุนมีความเสี่ยง ผู้ลงทุนควรศึกษาข้อมูลเพิ่มเติมก่อนตัดสินใจ`
+    );
+
+    // done all
+    for(let i=1;i<=4;i++) { document.getElementById('card'+i).classList.remove('active'); document.getElementById('card'+i).classList.add('done'); }
+    setStatus(4, '✓ เสร็จแล้ว');
+    setOutput(4, a4);
+
+  } catch(e) {
+    setOutput(1, `<span class="error-msg">❌ Error: ${e.message}</span>`);
+    for(let i=1;i<=4;i++) { document.getElementById('card'+i).classList.remove('active'); setStatus(i, 'หยุดทำงาน'); }
+  }
+
+  btn.disabled = false;
+  btn.textContent = '▶ วิเคราะห์อีกครั้ง';
+}
+</script>
+</body>
+</html>
