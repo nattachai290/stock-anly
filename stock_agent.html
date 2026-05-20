@@ -466,6 +466,7 @@
     <span class="apikey-label">🔑 Gemini API Key</span>
     <input type="password" class="apikey-input" id="apiKeyInput" placeholder="AIza..." autocomplete="off" oninput="onApiKeyChange()" />
     <span class="apikey-status" id="apiKeyStatus" style="color:var(--muted)">ยังไม่ได้ใส่ — รับฟรีที่ aistudio.google.com</span>
+    <button class="btn-clear-all" onclick="clearApiKey()" title="ลบ API Key">✕ Clear</button>
   </div>
 
   <!-- Input Zone -->
@@ -597,6 +598,10 @@ function onApiKeyChange() {
   if (!key) { el.textContent = 'ยังไม่ได้ใส่ — รับฟรีที่ aistudio.google.com'; el.style.color = 'var(--muted)'; return; }
   if (key.startsWith('AIza') && key.length > 20) { el.textContent = '✓ พร้อมใช้งาน'; el.style.color = 'var(--accent2)'; }
   else { el.textContent = '⚠️ รูปแบบไม่ถูกต้อง (ควรขึ้นต้นด้วย AIza)'; el.style.color = 'var(--danger)'; }
+}
+function clearApiKey() {
+  document.getElementById('apiKeyInput').value = '';
+  onApiKeyChange();
 }
 
 // --- State ---
