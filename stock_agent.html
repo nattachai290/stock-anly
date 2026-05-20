@@ -61,6 +61,36 @@
   header p { color: var(--muted); font-size: 0.85rem; letter-spacing: 2px; text-transform: uppercase; }
 
   /* Input Zone */
+  /* API Key zone */
+  .apikey-zone {
+    background: var(--surface);
+    border: 1px solid rgba(167,139,250,0.4);
+    border-radius: 16px;
+    padding: 18px 24px;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .apikey-label { font-size: 0.72rem; letter-spacing: 2px; text-transform: uppercase; color: var(--accent4); white-space: nowrap; }
+  .apikey-input {
+    flex: 1;
+    min-width: 220px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 14px;
+    color: var(--text);
+    font-family: 'Space Mono', monospace;
+    font-size: 0.78rem;
+    outline: none;
+    transition: border 0.2s;
+  }
+  .apikey-input:focus { border-color: var(--accent4); }
+  .apikey-input::placeholder { color: var(--muted); font-size: 0.7rem; }
+  .apikey-status { font-size: 0.68rem; font-family: 'Space Mono', monospace; white-space: nowrap; }
+
   .input-zone {
     background: var(--surface);
     border: 1px solid var(--border);
@@ -404,6 +434,13 @@
     <p>Multi-Agent Analysis System · US Markets</p>
   </header>
 
+  <!-- API Key Zone -->
+  <div class="apikey-zone">
+    <span class="apikey-label">🔑 Anthropic API Key</span>
+    <input type="password" class="apikey-input" id="apiKeyInput" placeholder="sk-ant-..." autocomplete="off" oninput="onApiKeyChange()" />
+    <span class="apikey-status" id="apiKeyStatus" style="color:var(--muted)">ยังไม่ได้ใส่</span>
+  </div>
+
   <!-- Input Zone -->
   <div class="input-zone">
     <div class="input-zone-header">
@@ -498,6 +535,16 @@
 </div>
 
 <script>
+// --- API Key ---
+function getApiKey() { return document.getElementById('apiKeyInput').value.trim(); }
+function onApiKeyChange() {
+  const key = getApiKey();
+  const el = document.getElementById('apiKeyStatus');
+  if (!key) { el.textContent = 'ยังไม่ได้ใส่'; el.style.color = 'var(--muted)'; return; }
+  if (key.startsWith('sk-ant-')) { el.textContent = '✓ พร้อมใช้งาน'; el.style.color = 'var(--accent2)'; }
+  else { el.textContent = '⚠️ รูปแบบไม่ถูกต้อง'; el.style.color = 'var(--danger)'; }
+}
+
 // --- State ---
 const DEFAULT_STOCKS = [];
 const STORAGE_KEY = 'stock-agent:v2:selected';
@@ -655,7 +702,7 @@ function setOutput(n, html) {
 async function callClaude(systemPrompt, userPrompt) {
   const res = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", "x-api-key": getApiKey(), "anthropic-version": "2023-06-01", "anthropic-dangerous-direct-browser-access": "true" },
     body: JSON.stringify({
       model: "claude-sonnet-4-20250514",
       max_tokens: 1000,
@@ -672,7 +719,7 @@ async function callClaude(systemPrompt, userPrompt) {
 async function callClaudeWithSearch(systemPrompt, userPrompt) {
   const res = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", "x-api-key": getApiKey(), "anthropic-version": "2023-06-01", "anthropic-dangerous-direct-browser-access": "true" },
     body: JSON.stringify({
       model: "claude-sonnet-4-20250514",
       max_tokens: 2000,
@@ -695,6 +742,7 @@ async function callClaudeWithSearch(systemPrompt, userPrompt) {
 async function runAgents() {
   const stocks = [...selectedStocks];
   if (stocks.length === 0) { alert('กรุณาเลือกหุ้นอย่างน้อย 1 ตัว'); return; }
+  if (!getApiKey() || !getApiKey().startsWith('sk-ant-')) { alert('กรุณาใส่ Anthropic API Key ที่ถูกต้องก่อน (เริ่มต้นด้วย sk-ant-)'); return; }
 
   const btn = document.getElementById('runBtn');
   btn.disabled = true;
